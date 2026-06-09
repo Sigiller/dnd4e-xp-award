@@ -1,0 +1,56 @@
+{
+  "id": "dnd4e-xp-award",
+  "title": "D&D 4e XP Award",
+  "description": "<p>Award experience to party members after combat or manually. Foundry v13, dnd4e system.</p>",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Sigiller",
+      "url": "https://github.com/Sigiller",
+      "flags": {}
+    }
+  ],
+  "esmodules": [
+    "dist/main.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json",
+      "flags": {}
+    }
+  ],
+  "compatibility": {
+    "minimum": "13.351",
+    "maximum": "13.351",
+    "verified": "13.351"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd4e",
+        "type": "system",
+        "compatibility": {}
+      }
+    ],
+    "recommends": [
+      {
+        "id": "fox-4e-styling",
+        "type": "module",
+        "reason": "Visual styling for 4e sheets",
+        "compatibility": {}
+      },
+      {
+        "id": "dnd4e-party-sheet",
+        "type": "module",
+        "reason": "Shared Party folder name setting",
+        "compatibility": {}
+      }
+    ]
+  },
+  "url": "https://github.com/Sigiller/dnd4e-xp-award",
+  "manifest": "https://github.com/Sigiller/dnd4e-xp-award/releases/latest/download/module.json",
+  "download": "https://github.com/Sigiller/dnd4e-xp-award/releases/latest/download/module.zip",
+  "flags": {}
+}

@@ -1,0 +1,51 @@
+{
+  "dnd4e-xp-award": {
+    "dialog": {
+      "title": "Award Experience",
+      "enemies": "Enemies",
+      "enemiesHint": "Drag actors from the sidebar or compendiums to add enemies.",
+      "skillChallenge": "Skill Challenge",
+      "skillChallengeComplexity": "Complexity",
+      "skillChallengeLevel": "Skill Challenge Level",
+      "skillChallengeInclude": "Include skill challenge XP",
+      "skillChallengeXp": "Skill Challenge XP: {xp}",
+      "bonusXp": "Bonus XP",
+      "totalXp": "Total XP",
+      "perMember": "{xp} XP per party member ({count} members)",
+      "perMemberManual": "XP per party member ({count} members)",
+      "recipients": "Party Members",
+      "apply": "Apply XP Reward",
+      "noRecipients": "No party members selected to receive XP.",
+      "applied": "Awarded {xp} XP to {name}.",
+      "appliedSummary": "XP awarded to {count} party member(s)."
+    },
+    "chat": {
+      "title": "Experience Awarded",
+      "titleReverted": "Experience Awarded (Reverted)",
+      "recipients": "Recipients",
+      "perMemberAward": "{xp} XP per party member ({count} members)",
+      "totalSummary": "Total pool: {xp} XP",
+      "revert": "Revert XP award",
+      "revertConfirmTitle": "Revert XP Award",
+      "revertConfirmContent": "Subtract the awarded XP from each recipient? This cannot be undone from the chat card.",
+      "revertedSummary": "Reverted XP for {count} character(s)."
+    },
+    "sceneControl": {
+      "title": "Award XP"
+    },
+    "settings": {
+      "showOnCombatEnd": {
+        "name": "Show XP Dialog on Combat End",
+        "hint": "When combat ends, open the XP award dialog for the GM."
+      },
+      "individualXp": {
+        "name": "Individual XP Distribution",
+        "hint": "Show per-member XP inputs instead of a single shared amount."
+      },
+      "partyFolderName": {
+        "name": "Party Folder Name",
+        "hint": "Actor folder name for party members (used when dnd4e-party-sheet is not active)."
+      }
+    }
+  }
+}
