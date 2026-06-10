@@ -26,7 +26,6 @@ declare const foundry: typeof foundry & {
     escapeHTML: (str: string) => string;
   };
 };
-declare const Actor: typeof Actor;
 declare const Folder: typeof Folder;
 declare const fromUuid: (uuid: string) => Promise<Actor | null>;
 
@@ -84,6 +83,17 @@ interface CanvasToken {
 
 declare const canvas: { tokens?: { placeables?: CanvasToken[] } } | undefined;
 
+declare const Actor: {
+  updateDocuments: (
+    updates: Array<{ _id: string } & Record<string, unknown>>,
+    options?: { render?: boolean }
+  ) => Promise<Actor[]>;
+};
+
+interface ActorUpdateOptions {
+  render?: boolean;
+}
+
 interface Actor {
   id: string;
   uuid?: string;
@@ -100,7 +110,7 @@ interface Actor {
   isPolymorphed?: boolean;
   getFlag: (scope: string, key: string) => unknown;
   testUserPermission: (user: User, level: number, options?: object) => boolean;
-  update: (data: object) => Promise<Actor>;
+  update: (data: object, options?: ActorUpdateOptions) => Promise<Actor>;
 }
 
 interface Combat {

@@ -1,4 +1,5 @@
 import { MODULE_ID, XP_AWARD_FLAG } from "../constants.js";
+import type { Actor } from "../foundry-globals.js";
 import { getActorTokenImage } from "./actor-presentation.js";
 import { xpAwardTheme } from "../styles/theme.js";
 import { revertXpRewards } from "./actor-xp.js";
@@ -154,27 +155,38 @@ export function injectChatMessageStyles(): void {
   document.head.appendChild(style);
 }
 
-async function enrichChatHtml(html: string): Promise<string> {
-  const TextEditor = foundry.applications.ux.TextEditor as {
-    enrichHTML?: (content: string, options?: object) => Promise<string>;
-    implementation?: { enrichHTML?: (content: string, options?: object) => Promise<string> };
-  };
-  const enrich = TextEditor.implementation?.enrichHTML ?? TextEditor.enrichHTML;
-  if (typeof enrich === "function") {
-    return enrich(html, { async: true, secrets: false });
-  }
-  return html;
-}
-
 function escapeHtml(value: string): string {
   return foundry.utils.escapeHTML(value);
 }
 
 function formatActorName(recipient: XpChatRecipient): string {
-  if (recipient.uuid) {
-    return `@UUID[${recipient.uuid}]{${recipient.name}}`;
-  }
   return escapeHtml(recipient.name);
+}
+
+function resolveActorChatImage(actor: Actor | undefined): string {
+  if (!actor) return "icons/svg/mystery-man.svg";
+  if (actor.img) return actor.img;
+  const proto = actor.prototypeToken;
+  if (proto?.texture?.src) return proto.texture.src;
+  if (proto?.img) return proto.img;
+  return getActorTokenImage(actor);
+}
+
+export function buildChatRecipientsFromAward(
+  valid: Array<{ actorId: string; xp: number }>,
+  tokenImages?: Map<string, string>
+): XpChatRecipient[] {
+  return valid.map((entry) => {
+    const actor = game.actors.get(entry.actorId);
+    const tokenImg = tokenImages?.get(entry.actorId);
+    return {
+      actorId: entry.actorId,
+      name: actor?.name ?? entry.actorId,
+      img: tokenImg ?? resolveActorChatImage(actor),
+      xp: entry.xp,
+      uuid: actor?.uuid,
+    };
+  });
 }
 
 function buildRecipientRows(recipients: XpChatRecipient[]): string {
@@ -268,21 +280,6 @@ function toBuildOptions(flag: XpAwardChatFlag): XpAwardChatBuildOptions {
   };
 }
 
-export function buildChatRecipientsFromAward(
-  valid: Array<{ actorId: string; xp: number }>
-): XpChatRecipient[] {
-  return valid.map((entry) => {
-    const actor = game.actors.get(entry.actorId);
-    return {
-      actorId: entry.actorId,
-      name: actor?.name ?? entry.actorId,
-      img: actor ? getActorTokenImage(actor) : "icons/svg/mystery-man.svg",
-      xp: entry.xp,
-      uuid: actor?.uuid,
-    };
-  });
-}
-
 export async function postXpAwardChatMessage(options: {
   recipients: XpChatRecipient[];
   enemies: XpEntry[];
@@ -309,12 +306,11 @@ export async function postXpAwardChatMessage(options: {
   };
 
   const html = buildXpAwardChatHtml(buildOptions, false);
-  const content = await enrichChatHtml(html);
 
   await ChatMessage.create({
     user: user.id,
     speaker: ChatMessage.getSpeaker(),
-    content,
+    content: html,
     flags: { [MODULE_ID]: { [XP_AWARD_FLAG]: flag } },
   });
 }
@@ -335,10 +331,9 @@ export async function revertXpAwardMessage(message: ChatMessageDoc): Promise<boo
   const count = await revertXpRewards(flag.recipients);
   const nextFlag: XpAwardChatFlag = { ...flag, reverted: true };
   const html = buildXpAwardChatHtml(toBuildOptions(nextFlag), true);
-  const content = await enrichChatHtml(html);
 
   await message.update({
-    content,
+    content: html,
     [`flags.${MODULE_ID}.${XP_AWARD_FLAG}`]: nextFlag,
   });
 

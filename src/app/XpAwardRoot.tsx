@@ -197,8 +197,13 @@ export function XpAwardRoot({
     try {
       const count = await applyXpRewards(valid);
       if (count > 0) {
+        const recipientTokenImages = new Map<string, string>();
+        for (const entry of valid) {
+          const img = resolvePresentation(entry, tokenImages)?.img;
+          if (img) recipientTokenImages.set(entry.actorId, img);
+        }
         await postXpAwardChatMessage({
-          recipients: buildChatRecipientsFromAward(valid),
+          recipients: buildChatRecipientsFromAward(valid, recipientTokenImages),
           enemies,
           bonusXp,
           totalXp: synced.totalXp,

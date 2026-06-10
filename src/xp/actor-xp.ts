@@ -20,35 +20,61 @@ export function resolvePolymorphedActor(actor: Actor): Actor {
   return actor;
 }
 
-export async function applyXpRewards(recipients: XpEntry[]): Promise<number> {
-  if (!game.user?.isGM) return 0;
+export interface ActorXpUpdate {
+  _id: string;
+  "system.details.exp": number;
+}
 
-  let applied = 0;
+export function buildXpApplyUpdates(recipients: Array<{ actorId: string; xp: number }>): ActorXpUpdate[] {
+  const updates: ActorXpUpdate[] = [];
+
   for (const entry of recipients) {
     if (entry.xp <= 0) continue;
     const actor = game.actors.get(entry.actorId);
     if (!actor) continue;
     const current = readActorXp(actor);
-    await actor.update({ "system.details.exp": current + Math.floor(entry.xp) });
-    applied += 1;
+    updates.push({
+      _id: actor.id,
+      "system.details.exp": current + Math.floor(entry.xp),
+    });
   }
-  return applied;
+
+  return updates;
+}
+
+export function buildXpRevertUpdates(
+  recipients: Array<{ actorId: string; xp: number }>
+): ActorXpUpdate[] {
+  const updates: ActorXpUpdate[] = [];
+
+  for (const entry of recipients) {
+    if (entry.xp <= 0) continue;
+    const actor = game.actors.get(entry.actorId);
+    if (!actor) continue;
+    const current = readActorXp(actor);
+    updates.push({
+      _id: actor.id,
+      "system.details.exp": Math.max(0, current - Math.floor(entry.xp)),
+    });
+  }
+
+  return updates;
+}
+
+export async function commitActorXpUpdates(updates: ActorXpUpdate[]): Promise<number> {
+  if (updates.length === 0) return 0;
+  await Actor.updateDocuments(updates, { render: false });
+  return updates.length;
+}
+
+export async function applyXpRewards(recipients: XpEntry[]): Promise<number> {
+  if (!game.user?.isGM) return 0;
+  return commitActorXpUpdates(buildXpApplyUpdates(recipients));
 }
 
 export async function revertXpRewards(
   recipients: Array<{ actorId: string; xp: number }>
 ): Promise<number> {
   if (!game.user?.isGM) return 0;
-
-  let reverted = 0;
-  for (const entry of recipients) {
-    if (entry.xp <= 0) continue;
-    const actor = game.actors.get(entry.actorId);
-    if (!actor) continue;
-    const current = readActorXp(actor);
-    const next = Math.max(0, current - Math.floor(entry.xp));
-    await actor.update({ "system.details.exp": next });
-    reverted += 1;
-  }
-  return reverted;
+  return commitActorXpUpdates(buildXpRevertUpdates(recipients));
 }
