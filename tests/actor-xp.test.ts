@@ -4,47 +4,36 @@ import {
   buildXpApplyUpdates,
   buildXpRevertUpdates,
   commitActorXpUpdates,
-} from "../src/xp/actor-xp.ts";
-import type { Actor } from "../src/foundry-globals.js";
-
-function mockActor(id: string, exp: number): Actor {
-  return {
-    id,
-    name: `Actor ${id}`,
-    type: "character",
-    img: "",
-    folder: null,
-    ownership: {},
-    flags: {},
-    system: { details: { exp } },
-    getFlag: () => undefined,
-    testUserPermission: () => true,
-    update: async () => mockActor(id, exp),
-  } as Actor;
-}
+} from "../src/xp/actor-xp.js";
+import { mockActor } from "./helpers/mock-actor.js";
 
 describe("actor-xp batch updates", () => {
   const originalGame = (globalThis as { game?: unknown }).game;
   const originalActor = (globalThis as { Actor?: unknown }).Actor;
-  let updateDocumentsCalls: Array<{
-    updates: Array<{ _id: string } & Record<string, unknown>>;
+  let updateDocumentsCalls: {
+    updates: ({ _id: string } & Record<string, unknown>)[];
     options?: { render?: boolean };
-  }>;
+  }[];
 
   beforeEach(() => {
     updateDocumentsCalls = [];
     const actors = new Map([
-      ["pc1", mockActor("pc1", 100)],
-      ["pc2", mockActor("pc2", 50)],
+      ["pc1", mockActor({ id: "pc1", name: "PC 1", system: { details: { exp: 100 } } })],
+      ["pc2", mockActor({ id: "pc2", name: "PC 2", system: { details: { exp: 50 } } })],
     ]);
-    (globalThis as { game?: { actors: { get: (id: string) => Actor | undefined }; user?: { isGM: boolean } } }).game = {
+    (globalThis as {
+      game?: {
+        actors: { get: (id: string) => Actor.Implementation | undefined };
+        user?: { isGM: boolean };
+      };
+    }).game = {
       actors: { get: (id: string) => actors.get(id) },
       user: { isGM: true },
     };
     (globalThis as {
       Actor?: {
         updateDocuments: (
-          updates: Array<{ _id: string } & Record<string, unknown>>,
+          updates: ({ _id: string } & Record<string, unknown>)[],
           options?: { render?: boolean }
         ) => Promise<unknown[]>;
       };

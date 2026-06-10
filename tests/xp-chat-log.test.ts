@@ -3,34 +3,18 @@ import assert from "node:assert/strict";
 import {
   buildChatRecipientsFromAward,
   buildXpAwardChatHtml,
-} from "../src/xp/xp-chat-log.ts";
-import type { Actor } from "../src/foundry-globals.js";
-
-function mockActor(overrides: Partial<Actor> & { id: string; name: string }): Actor {
-  return {
-    type: "character",
-    img: "actors/hero.png",
-    uuid: `Actor.${overrides.id}`,
-    folder: null,
-    ownership: {},
-    flags: {},
-    system: {},
-    getFlag: () => undefined,
-    testUserPermission: () => true,
-    update: async () => mockActor(overrides),
-    ...overrides,
-  } as Actor;
-}
+} from "../src/xp/xp-chat-log.js";
+import { mockActor } from "./helpers/mock-actor.js";
 
 describe("xp-chat-log performance helpers", () => {
   const originalGame = (globalThis as { game?: unknown }).game;
   const originalFoundry = (globalThis as { foundry?: unknown }).foundry;
 
   beforeEach(() => {
-    const actor = mockActor({ id: "pc1", name: "Theron <Bold>" });
+    const actor = mockActor({ id: "pc1", name: "Theron <Bold>", img: "actors/hero.png" });
     (globalThis as {
       game?: {
-        actors: { get: (id: string) => Actor | undefined };
+        actors: { get: (id: string) => Actor.Implementation | undefined };
         i18n: { localize: (key: string) => string; format: (key: string, data?: object) => string };
       };
     }).game = {
@@ -70,15 +54,17 @@ describe("xp-chat-log performance helpers", () => {
       img: "",
       prototypeToken: { texture: { src: "prototypes/aria.png" } },
     });
-    (globalThis as { game?: { actors: { get: (id: string) => Actor | undefined } } }).game = {
+    (globalThis as {
+      game?: {
+        actors: { get: (id: string) => Actor.Implementation | undefined };
+        i18n: { localize: (key: string) => string; format: (key: string, data?: object) => string };
+      };
+    }).game = {
       actors: { get: (id: string) => (id === "pc2" ? actor : undefined) },
       i18n: {
         localize: (key: string) => key,
         format: (key: string) => key,
       },
-    } as {
-      actors: { get: (id: string) => Actor | undefined };
-      i18n: { localize: (key: string) => string; format: (key: string, data?: object) => string };
     };
 
     const recipients = buildChatRecipientsFromAward([{ actorId: "pc2", xp: 25 }]);

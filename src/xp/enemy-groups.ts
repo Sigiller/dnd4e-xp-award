@@ -7,7 +7,7 @@ export function enemyCount(entry: XpEntry): number {
 
 export function resolveEnemyName(entry: XpEntry): string {
   if (entry.name?.trim()) return entry.name.trim();
-  const actor = game.actors.get(entry.actorId);
+  const actor = game.actors?.get(entry.actorId);
   if (actor?.name?.trim()) return actor.name.trim();
   const presentation = resolveEnemyPresentation(entry);
   return presentation?.name?.trim() ?? entry.actorId;

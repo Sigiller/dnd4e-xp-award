@@ -1,8 +1,12 @@
-import { MODULE_ID } from "./constants.js";
 import { openXpAwardDialog } from "./app/XpAwardApp.js";
+import { MODULE_ID } from "./constants.js";
+import type { XpAwardApi } from "./foundry-augmentations.js";
 import { registerSettings, showOnCombatEnd } from "./settings.js";
-import { injectChatMessageStyles, registerXpAwardChatHooks, ensureChatLogListeners } from "./xp/xp-chat-log.js";
-import type { Combat } from "./foundry-globals.js";
+import {
+  ensureChatLogListeners,
+  injectChatMessageStyles,
+  registerXpAwardChatHooks,
+} from "./xp/xp-chat-log.js";
 
 Hooks.once("init", () => {
   registerSettings();
@@ -20,24 +24,25 @@ Hooks.once("ready", () => {
 
   ensureChatLogListeners();
 
-  const mod = game.modules.get(MODULE_ID);
+  const mod = game.modules?.get(MODULE_ID);
   if (mod) {
-    mod.api = {
-      openXpAwardDialog: (options) => openXpAwardDialog(options),
+    const api: XpAwardApi = {
+      openXpAwardDialog: (opts) => openXpAwardDialog(opts),
     };
+    mod.api = api;
   }
 
   console.log(`${MODULE_ID} | ready`);
 });
 
-Hooks.on("deleteCombat", (combat: Combat) => {
+Hooks.on("deleteCombat", (combat: Combat.Implementation) => {
   if (!game.user?.isGM) return;
   if (!combat.started) return;
   if (!showOnCombatEnd()) return;
   void openXpAwardDialog({ combat, mode: "auto" });
 });
 
-Hooks.on("getSceneControlButtons", (controls: Record<string, { tools?: Record<string, object> }>) => {
+Hooks.on("getSceneControlButtons", (controls) => {
   if (!game.user?.isGM) return;
   if (game.system?.id !== "dnd4e") return;
 

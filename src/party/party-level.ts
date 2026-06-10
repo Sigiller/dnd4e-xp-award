@@ -1,9 +1,7 @@
-import type { Actor } from "../foundry-globals.js";
+import { readActorLevel } from "../types/dnd4e.js";
 import { getPartyMembers } from "./party-members.js";
 
-export function readActorLevel(actor: Actor): number {
-  return Number((actor.system?.details as { level?: number } | undefined)?.level) || 1;
-}
+export { readActorLevel };
 
 /** Floor of the mean PC level in the party folder (same as dnd4e-party-sheet). */
 export function calcPartyLevel(actors = getPartyMembers()): number {

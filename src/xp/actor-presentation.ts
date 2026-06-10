@@ -1,5 +1,10 @@
-import type { Actor } from "../foundry-globals.js";
-import { readMonsterXpValue } from "./actor-xp.js";
+import {
+  getDnd4eSystem,
+  isPlayerCharacter,
+  localizeDnd4eConfigLabel,
+  readActorXp,
+  requireActorId,
+} from "../types/dnd4e.js";
 import { createEnemyEntry, type XpEntry } from "./xp-calculator.js";
 
 export interface ActorPresentation {
@@ -9,86 +14,85 @@ export interface ActorPresentation {
   subtitle: string;
 }
 
-function localizeConfigLabel(
-  config: Record<string, { label?: string }> | undefined,
-  key: string | undefined
-): string {
-  if (!key || !config?.[key]?.label) return "";
-  return game.i18n.localize(config[key]!.label!);
-}
-
-function pcSubtitle(actor: Actor): string {
-  const details = actor.system?.details as Record<string, unknown> | undefined;
+function pcSubtitle(actor: Actor.Implementation): string {
+  const details = getDnd4eSystem(actor).details;
   if (!details) return "";
   const level = details.level != null ? `Level ${details.level}` : "";
   const parts = [details.race, details.class, details.paragon, details.epic]
-    .filter((p) => p && String(p).trim())
+    .filter((part) => part && String(part).trim())
     .map(String);
   const classLine = parts.join(" / ");
   return [level, classLine].filter(Boolean).join(" · ");
 }
 
-function npcSubtitle(actor: Actor): string {
-  const details = actor.system?.details as {
-    level?: number;
-    role?: { primary?: string; secondary?: string };
-  } | undefined;
+function npcSubtitle(actor: Actor.Implementation): string {
+  const details = getDnd4eSystem(actor).details;
   if (!details) return "";
   const level = details.level != null ? `Level ${details.level}` : "";
-  const typeLabel = localizeConfigLabel(CONFIG.DND4E.creatureRoleSecond, details.role?.secondary);
-  const roleLabel = localizeConfigLabel(CONFIG.DND4E.creatureRole, details.role?.primary);
+  const typeLabel = localizeDnd4eConfigLabel(
+    CONFIG.DND4E.creatureRoleSecond,
+    details.role?.secondary
+  );
+  const roleLabel = localizeDnd4eConfigLabel(CONFIG.DND4E.creatureRole, details.role?.primary);
   const typeParts = [typeLabel, roleLabel].filter(Boolean).join(" ");
   return [level, typeParts].filter(Boolean).join(" · ");
 }
 
+function readTokenTextureSrc(token: foundry.canvas.placeables.Token): string | undefined {
+  const documentSrc = token.document.texture?.src;
+  return typeof documentSrc === "string" ? documentSrc : undefined;
+}
+
 /** Token ring image for an actor (scene token → prototype → portrait). */
-export function getActorTokenImage(actor: Actor): string {
-  const canvasTokens = (
-    globalThis as { canvas?: { tokens?: { placeables?: CanvasToken[] } } }
-  ).canvas?.tokens?.placeables;
+export function getActorTokenImage(actor: Actor.Implementation): string {
+  const sceneCanvas = (globalThis as { canvas?: Canvas | null | undefined }).canvas;
+  const canvasTokens = sceneCanvas?.tokens?.placeables;
   if (canvasTokens) {
     for (const token of canvasTokens) {
       if (token.actor?.id !== actor.id) continue;
-      const src = token.document?.texture?.src ?? token.texture?.src;
+      const src = readTokenTextureSrc(token);
       if (src) return src;
     }
   }
 
-  const proto = (
-    actor as Actor & { prototypeToken?: { texture?: { src?: string }; img?: string } }
-  ).prototypeToken;
-  if (proto?.texture?.src) return proto.texture.src;
-  if (proto?.img) return proto.img;
+  const proto = actor.prototypeToken;
+  if (proto.texture.src) return proto.texture.src;
   return actor.img || "icons/svg/mystery-man.svg";
 }
 
-export function buildActorPresentation(actor: Actor, tokenImg?: string): ActorPresentation {
-  const subtitle = actor.type === "Player Character" ? pcSubtitle(actor) : npcSubtitle(actor);
+export function buildActorPresentation(
+  actor: Actor.Implementation,
+  tokenImg?: string
+): ActorPresentation {
+  const subtitle = isPlayerCharacter(actor) ? pcSubtitle(actor) : npcSubtitle(actor);
   return {
-    id: actor.id,
+    id: requireActorId(actor),
     name: actor.name,
-    img: tokenImg || actor.img || "icons/svg/mystery-man.svg",
+    img: tokenImg ?? (actor.img || "icons/svg/mystery-man.svg"),
     subtitle,
   };
 }
 
-function isWorldActor(actor: Actor): boolean {
-  return Boolean(game.actors.get(actor.id));
+function isWorldActor(actor: Actor.Implementation): boolean {
+  const actorId = actor.id;
+  if (!actorId) return false;
+  return Boolean(game.actors?.get(actorId));
 }
 
 export function createEnemyEntryFromActor(
-  actor: Actor,
+  actor: Actor.Implementation,
   rowId?: string,
   tokenImg?: string
 ): XpEntry {
   const presentation = buildActorPresentation(actor, tokenImg);
-  const xp = readMonsterXpValue(actor);
+  const xp = readActorXp(actor);
+  const actorId = requireActorId(actor);
 
-  return createEnemyEntry(actor.id, xp, rowId, {
+  return createEnemyEntry(actorId, xp, rowId, {
     name: presentation.name,
     subtitle: presentation.subtitle,
     img: presentation.img,
-    ...(isWorldActor(actor) ? {} : { uuid: actor.uuid }),
+    ...(isWorldActor(actor) ? {} : { uuid: actor.uuid ?? undefined }),
   });
 }
 
@@ -96,7 +100,7 @@ function resolveEnemyImage(entry: XpEntry, tokenImg?: string): string {
   if (tokenImg) return tokenImg;
   if (entry.img) return entry.img;
 
-  const actor = game.actors.get(entry.actorId);
+  const actor = game.actors?.get(entry.actorId);
   if (actor) return getActorTokenImage(actor);
 
   return "icons/svg/mystery-man.svg";
@@ -115,7 +119,7 @@ export function resolveEnemyPresentation(
     };
   }
 
-  const actor = game.actors.get(entry.actorId);
+  const actor = game.actors?.get(entry.actorId);
   if (!actor) return null;
   return buildActorPresentation(actor, tokenImg);
 }

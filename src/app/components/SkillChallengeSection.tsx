@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../constants.js";
+import { formatMessage, localize } from "../../i18n.js";
 import {
   clampSkillChallengeComplexity,
   clampSkillChallengeLevel,
@@ -37,7 +38,7 @@ export function SkillChallengeSection({
   onComplexityChange,
   onLevelChange,
 }: SkillChallengeSectionProps) {
-  const includeLabel = game.i18n.localize(`${MODULE_ID}.dialog.skillChallengeInclude`);
+  const includeLabel = localize(`${MODULE_ID}.dialog.skillChallengeInclude`);
 
   return (
     <SkillChallengeSectionRoot $disabled={!enabled}>
@@ -52,11 +53,11 @@ export function SkillChallengeSection({
 
       <SectionBody $disabled={!enabled}>
         <SummaryLine>
-          {game.i18n.format(`${MODULE_ID}.dialog.skillChallengeXp`, { xp: skillChallengeXp })}
+          {formatMessage(`${MODULE_ID}.dialog.skillChallengeXp`, { xp: skillChallengeXp })}
         </SummaryLine>
         <SkillChallengeFieldsRow>
           <BonusRow>
-            <span>{game.i18n.localize(`${MODULE_ID}.dialog.skillChallengeComplexity`)}</span>
+            <span>{localize(`${MODULE_ID}.dialog.skillChallengeComplexity`)}</span>
             <XpInput
               value={complexity}
               min={SKILL_CHALLENGE_COMPLEXITY_MIN}
@@ -68,7 +69,7 @@ export function SkillChallengeSection({
             />
           </BonusRow>
           <BonusRow>
-            <span>{game.i18n.localize(`${MODULE_ID}.dialog.skillChallengeLevel`)}</span>
+            <span>{localize(`${MODULE_ID}.dialog.skillChallengeLevel`)}</span>
             <XpInput
               value={level}
               min={SKILL_CHALLENGE_LEVEL_MIN}

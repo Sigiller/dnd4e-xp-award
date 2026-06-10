@@ -5,7 +5,7 @@ import {
   groupEnemyEntries,
   mergeEnemyEntry,
   updateEnemyEntry,
-} from "../src/xp/enemy-groups.ts";
+} from "../src/xp/enemy-groups.js";
 
 describe("enemy-groups", () => {
   it("groups by normalized name and per-monster xp", () => {

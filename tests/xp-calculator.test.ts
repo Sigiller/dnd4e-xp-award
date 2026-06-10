@@ -5,7 +5,7 @@ import {
   calcTotalXp,
   redistributeRecipients,
   syncXpState,
-} from "../src/xp/xp-calculator.ts";
+} from "../src/xp/xp-calculator.js";
 
 describe("xp-calculator", () => {
   it("sums enemy xp, bonus, and skill challenge xp", () => {

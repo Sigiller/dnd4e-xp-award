@@ -5,8 +5,8 @@ import {
   clampSkillChallengeComplexity,
   clampSkillChallengeLevel,
   defaultSkillChallengeLevel,
-} from "../src/xp/skill-challenge.ts";
-import { getMonsterXpForLevel, getXpTableRow } from "../src/xp/xp-table.ts";
+} from "../src/xp/skill-challenge.js";
+import { getMonsterXpForLevel, getXpTableRow } from "../src/xp/xp-table.js";
 
 describe("xp-table", () => {
   it("looks up standard monster xp by level", () => {

@@ -1,20 +1,17 @@
-import type { Actor } from "../foundry-globals.js";
+import { isPolymorphedActor, readActorXp } from "../types/dnd4e.js";
 import type { XpEntry } from "./xp-calculator.js";
 
-export function readActorXp(actor: Actor): number {
-  const details = actor.system?.details as { exp?: number } | undefined;
-  return Math.max(0, Math.floor(Number(details?.exp ?? 0)));
-}
+export { readActorXp };
 
-export function readMonsterXpValue(actor: Actor): number {
+export function readMonsterXpValue(actor: Actor.Implementation): number {
   return readActorXp(actor);
 }
 
-export function resolvePolymorphedActor(actor: Actor): Actor {
-  if (!actor.isPolymorphed) return actor;
-  const originalId = actor.getFlag(game.system?.id ?? "dnd4e", "originalActor");
+export function resolvePolymorphedActor(actor: Actor.Implementation): Actor.Implementation {
+  if (!isPolymorphedActor(actor)) return actor;
+  const originalId = actor.getFlag("dnd4e", "originalActor");
   if (typeof originalId === "string") {
-    const original = game.actors.get(originalId);
+    const original = game.actors?.get(originalId);
     if (original) return original;
   }
   return actor;
@@ -25,12 +22,14 @@ export interface ActorXpUpdate {
   "system.details.exp": number;
 }
 
-export function buildXpApplyUpdates(recipients: Array<{ actorId: string; xp: number }>): ActorXpUpdate[] {
+export function buildXpApplyUpdates(
+  recipients: { actorId: string; xp: number }[]
+): ActorXpUpdate[] {
   const updates: ActorXpUpdate[] = [];
 
   for (const entry of recipients) {
     if (entry.xp <= 0) continue;
-    const actor = game.actors.get(entry.actorId);
+    const actor = game.actors?.get(entry.actorId);
     if (!actor) continue;
     const current = readActorXp(actor);
     updates.push({
@@ -43,13 +42,13 @@ export function buildXpApplyUpdates(recipients: Array<{ actorId: string; xp: num
 }
 
 export function buildXpRevertUpdates(
-  recipients: Array<{ actorId: string; xp: number }>
+  recipients: { actorId: string; xp: number }[]
 ): ActorXpUpdate[] {
   const updates: ActorXpUpdate[] = [];
 
   for (const entry of recipients) {
     if (entry.xp <= 0) continue;
-    const actor = game.actors.get(entry.actorId);
+    const actor = game.actors?.get(entry.actorId);
     if (!actor) continue;
     const current = readActorXp(actor);
     updates.push({
@@ -73,8 +72,10 @@ export async function applyXpRewards(recipients: XpEntry[]): Promise<number> {
 }
 
 export async function revertXpRewards(
-  recipients: Array<{ actorId: string; xp: number }>
+  recipients: { actorId: string; xp: number }[]
 ): Promise<number> {
   if (!game.user?.isGM) return 0;
   return commitActorXpUpdates(buildXpRevertUpdates(recipients));
 }
+
+// Keep getDnd4eSystem import used only if needed - actually I imported but didn't use. Remove unused import.

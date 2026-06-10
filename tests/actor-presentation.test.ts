@@ -3,20 +3,8 @@ import assert from "node:assert/strict";
 import {
   createEnemyEntryFromActor,
   resolveEnemyPresentation,
-} from "../src/xp/actor-presentation.ts";
-import type { Actor } from "../src/foundry-globals.js";
-
-function mockActor(overrides: Partial<Actor> & { id: string; name: string }): Actor {
-  return {
-    type: "NPC",
-    img: "monsters/goblin.png",
-    uuid: `Compendium.world.monsters.Actor.${overrides.id}`,
-    system: {
-      details: { exp: 125, level: 2, role: { primary: "skirmisher" } },
-    },
-    ...overrides,
-  } as Actor;
-}
+} from "../src/xp/actor-presentation.js";
+import { mockActor } from "./helpers/mock-actor.js";
 
 describe("actor-presentation compendium enemies", () => {
   it("caches presentation for non-world actors", () => {
@@ -27,7 +15,16 @@ describe("actor-presentation compendium enemies", () => {
       actors: { get: () => undefined },
     };
 
-    const actor = mockActor({ id: "goblin", name: "Goblin Cutthroat" });
+    const actor = mockActor({
+      id: "goblin",
+      name: "Goblin Cutthroat",
+      type: "NPC",
+      img: "monsters/goblin.png",
+      uuid: "Compendium.world.monsters.Actor.goblin",
+      system: {
+        details: { exp: 125, level: 2, role: { primary: "skirmisher" } },
+      },
+    });
     const entry = createEnemyEntryFromActor(actor);
 
     assert.equal(entry.actorId, "goblin");
@@ -60,14 +57,16 @@ describe("actor-presentation compendium enemies", () => {
     (globalThis as { CONFIG?: object; game?: object }).CONFIG = {
       DND4E: { creatureRole: {}, creatureRoleSecond: {}, skills: {} },
     };
-    const actor = {
+    const actor = mockActor({
       id: "goblin-world",
       name: "Goblin Cutthroat",
       type: "NPC",
       img: "actors/goblin-portrait.png",
       system: { details: { exp: 125, level: 2 } },
-    } as Actor;
-    (globalThis as { game?: { actors: { get: (id: string) => Actor | undefined } } }).game = {
+    });
+    (globalThis as {
+      game?: { actors: { get: (id: string) => Actor.Implementation | undefined } };
+    }).game = {
       actors: {
         get: (id: string) => (id === "goblin-world" ? actor : undefined),
       },

@@ -1,5 +1,5 @@
 import { MODULE_ID, XP_AWARD_FLAG } from "../constants.js";
-import type { Actor } from "../foundry-globals.js";
+import { formatMessage, localize } from "../i18n.js";
 import { getActorTokenImage } from "./actor-presentation.js";
 import { xpAwardTheme } from "../styles/theme.js";
 import { revertXpRewards } from "./actor-xp.js";
@@ -163,21 +163,20 @@ function formatActorName(recipient: XpChatRecipient): string {
   return escapeHtml(recipient.name);
 }
 
-function resolveActorChatImage(actor: Actor | undefined): string {
+function resolveActorChatImage(actor: Actor.Implementation | undefined): string {
   if (!actor) return "icons/svg/mystery-man.svg";
   if (actor.img) return actor.img;
   const proto = actor.prototypeToken;
-  if (proto?.texture?.src) return proto.texture.src;
-  if (proto?.img) return proto.img;
+  if (proto.texture.src) return proto.texture.src;
   return getActorTokenImage(actor);
 }
 
 export function buildChatRecipientsFromAward(
-  valid: Array<{ actorId: string; xp: number }>,
+  valid: { actorId: string; xp: number }[],
   tokenImages?: Map<string, string>
 ): XpChatRecipient[] {
   return valid.map((entry) => {
-    const actor = game.actors.get(entry.actorId);
+    const actor = game.actors?.get(entry.actorId);
     const tokenImg = tokenImages?.get(entry.actorId);
     return {
       actorId: entry.actorId,
@@ -208,7 +207,7 @@ function buildRecipientRows(recipients: XpChatRecipient[]): string {
 function buildRecipientsSection(options: XpAwardChatBuildOptions): string {
   if (!options.individualXp) return "";
 
-  const recipientsLabel = game.i18n.localize(`${MODULE_ID}.chat.recipients`);
+  const recipientsLabel = localize(`${MODULE_ID}.chat.recipients`);
   return `<h4 class="xp-award-recipients-heading">${escapeHtml(recipientsLabel)}</h4>
     <div class="xp-award-recipients">${buildRecipientRows(options.recipients)}</div>`;
 }
@@ -218,7 +217,7 @@ function buildSummary(options: XpAwardChatBuildOptions): string {
 
   if (!options.individualXp && options.perMemberXp > 0) {
     parts.push(
-      game.i18n.format(`${MODULE_ID}.chat.perMemberAward`, {
+      formatMessage(`${MODULE_ID}.chat.perMemberAward`, {
         xp: options.perMemberXp,
         count: options.recipients.length,
       })
@@ -226,7 +225,7 @@ function buildSummary(options: XpAwardChatBuildOptions): string {
   }
 
   parts.push(
-    game.i18n.format(`${MODULE_ID}.chat.totalSummary`, { xp: options.totalXp })
+    formatMessage(`${MODULE_ID}.chat.totalSummary`, { xp: options.totalXp })
   );
 
   return parts.map((p) => `<div class="xp-award-summary-line">${escapeHtml(p)}</div>`).join("");
@@ -237,9 +236,9 @@ export function buildXpAwardChatHtml(
   reverted = false
 ): string {
   const title = reverted
-    ? game.i18n.localize(`${MODULE_ID}.chat.titleReverted`)
-    : game.i18n.localize(`${MODULE_ID}.chat.title`);
-  const revertTitle = escapeHtml(game.i18n.localize(`${MODULE_ID}.chat.revert`));
+    ? localize(`${MODULE_ID}.chat.titleReverted`)
+    : localize(`${MODULE_ID}.chat.title`);
+  const revertTitle = escapeHtml(localize(`${MODULE_ID}.chat.revert`));
   const revertedClass = reverted ? " xp-award-reverted" : "";
   const revertButton = reverted
     ? ""
@@ -259,7 +258,7 @@ export function buildXpAwardChatHtml(
 </div>`;
 }
 
-export function getXpAwardFlag(message: ChatMessageDoc): XpAwardChatFlag | null {
+export function getXpAwardFlag(message: ChatMessage.Implementation): XpAwardChatFlag | null {
   const data = message.getFlag(MODULE_ID, XP_AWARD_FLAG) as XpAwardChatFlag | undefined;
   if (!data?.recipients) return null;
   return {
@@ -308,22 +307,26 @@ export async function postXpAwardChatMessage(options: {
   const html = buildXpAwardChatHtml(buildOptions, false);
 
   await ChatMessage.create({
-    user: user.id,
+    user,
     speaker: ChatMessage.getSpeaker(),
     content: html,
-    flags: { [MODULE_ID]: { [XP_AWARD_FLAG]: flag } },
+    flags: {
+      [MODULE_ID]: {
+        [XP_AWARD_FLAG]: flag,
+      },
+    },
   });
 }
 
-export async function revertXpAwardMessage(message: ChatMessageDoc): Promise<boolean> {
+export async function revertXpAwardMessage(message: ChatMessage.Implementation): Promise<boolean> {
   if (!game.user?.isGM) return false;
 
   const flag = getXpAwardFlag(message);
   if (!flag || flag.reverted) return false;
 
   const confirmed = await foundry.applications.api.Dialog.confirm({
-    window: { title: game.i18n.localize(`${MODULE_ID}.chat.revertConfirmTitle`) },
-    content: game.i18n.localize(`${MODULE_ID}.chat.revertConfirmContent`),
+    window: { title: localize(`${MODULE_ID}.chat.revertConfirmTitle`) },
+    content: localize(`${MODULE_ID}.chat.revertConfirmContent`),
     yes: { default: true },
   });
   if (!confirmed) return false;
@@ -334,12 +337,16 @@ export async function revertXpAwardMessage(message: ChatMessageDoc): Promise<boo
 
   await message.update({
     content: html,
-    [`flags.${MODULE_ID}.${XP_AWARD_FLAG}`]: nextFlag,
+    flags: {
+      [MODULE_ID]: {
+        [XP_AWARD_FLAG]: nextFlag,
+      },
+    },
   });
 
   if (count > 0) {
     ui.notifications?.info(
-      game.i18n.format(`${MODULE_ID}.chat.revertedSummary`, { count })
+      formatMessage(`${MODULE_ID}.chat.revertedSummary`, { count })
     );
   }
   return true;
@@ -385,7 +392,7 @@ function onChatLogClick(event: Event): void {
     messageEl?.getAttribute("data-document-id");
   if (!messageId) return;
 
-  const message = game.messages.get(messageId) as ChatMessageDoc | undefined;
+  const message = game.messages.get(messageId);
   if (!message) return;
 
   const flag = getXpAwardFlag(message);
@@ -402,7 +409,7 @@ function bindChatLogListeners(element: HTMLElement): void {
   element.addEventListener("click", onChatLogClick);
 }
 
-function decorateXpAwardMessage(message: ChatMessageDoc, html: HTMLElement): void {
+function decorateXpAwardMessage(message: ChatMessage.Implementation, html: HTMLElement): void {
   const card = html.querySelector(".dnd4e-xp-award-chat");
   if (!card) return;
 
@@ -430,14 +437,7 @@ export function registerXpAwardChatHooks(): void {
     bindChatLogListeners(element);
   });
 
-  Hooks.on("renderChatMessageHTML", (message: ChatMessageDoc, html: HTMLElement) => {
+  Hooks.on("renderChatMessageHTML", (message, html) => {
     decorateXpAwardMessage(message, html);
   });
-}
-
-interface ChatMessageDoc {
-  id: string;
-  content: string;
-  getFlag: (scope: string, key: string) => unknown;
-  update: (data: object) => Promise<unknown>;
 }

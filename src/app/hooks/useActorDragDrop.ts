@@ -5,11 +5,12 @@ import type { XpEntry } from "../../xp/xp-calculator.js";
 
 function getDragData(event: DragEvent): Record<string, unknown> | null {
   const TextEditor = foundry.applications.ux.TextEditor;
-  return (
+  const data =
     TextEditor.getDragEventData?.(event) ??
     TextEditor.implementation?.getDragEventData?.(event) ??
-    null
-  );
+    null;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  return data as Record<string, unknown>;
 }
 
 function isActorDropData(data: Record<string, unknown> | null): boolean {
@@ -58,7 +59,7 @@ export function useActorDragDrop(
           const doc = await fromUuid(data.uuid);
           if (!doc || !("system" in doc)) return;
 
-          const actor = resolvePolymorphedActor(doc as import("../../foundry-globals.js").Actor);
+          const actor = resolvePolymorphedActor(doc as Actor.Implementation);
           onEnemyDropped(createEnemyEntryFromActor(actor));
         },
       },

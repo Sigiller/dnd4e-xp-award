@@ -1,44 +1,45 @@
 import { getPartyFolderName } from "../settings.js";
-import type { Actor, Folder, User } from "../foundry-globals.js";
+import { isPlayerCharacter } from "../types/dnd4e.js";
 
-const PC_TYPE = "Player Character";
-
-function isPlayerOrTrustedUser(user: User | undefined): user is User {
-  if (!user?.active || user.isGM) return false;
+function isPlayerOrTrustedUser(user: User.Implementation): boolean {
+  if (!user.active || user.isGM) return false;
   return user.role === CONST.USER_ROLES.PLAYER || user.role === CONST.USER_ROLES.TRUSTED;
 }
 
-function isPlayerCharacter(actor: Actor): boolean {
-  return actor.type === PC_TYPE;
-}
-
-export function getPartyFolder(): Folder | undefined {
+export function getPartyFolder(): Folder.Implementation | undefined {
   const name = getPartyFolderName().trim().toLowerCase();
   if (!name) return undefined;
-  return game.folders.find(
-    (f) => f.type === "Actor" && f.name.trim().toLowerCase() === name
+  return game.folders?.find(
+    (folder) => folder.type === "Actor" && folder.name.trim().toLowerCase() === name
   );
 }
 
-export function getActorFolderId(actor: Actor): string | null {
+export function getActorFolderId(actor: Actor.Implementation): string | null {
   const folder = actor.folder;
   if (!folder) return null;
   if (typeof folder === "string") return folder;
-  return folder.id ?? null;
+  return folder.id;
 }
 
-export function isDirectChildOfPartyFolder(actor: Actor, partyFolderId: string): boolean {
+export function isDirectChildOfPartyFolder(
+  actor: Actor.Implementation,
+  partyFolderId: string
+): boolean {
   return getActorFolderId(actor) === partyFolderId;
 }
 
-function permissionForUser(actor: Actor, user: User): number {
-  const ownership = actor.ownership ?? {};
-  if (user.id in ownership) return ownership[user.id]!;
+function permissionForUser(actor: Actor.Implementation, user: User.Implementation): number {
+  const ownership = actor.ownership;
+  const userId = user.id ?? "";
+  if (userId && userId in ownership) {
+    return ownership[userId] ?? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+  }
   return ownership.default ?? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
 }
 
-export function hasPlayerOrTrustedOwner(actor: Actor): boolean {
-  for (const user of game.users) {
+export function hasPlayerOrTrustedOwner(actor: Actor.Implementation): boolean {
+  const users = game.users?.contents ?? [];
+  for (const user of users) {
     if (!isPlayerOrTrustedUser(user)) continue;
 
     if (user.character?.id === actor.id) return true;
@@ -51,15 +52,18 @@ export function hasPlayerOrTrustedOwner(actor: Actor): boolean {
     }
   }
 
-  const def = actor.ownership?.default ?? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
-  if (def >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && game.users.some(isPlayerOrTrustedUser)) {
+  const def = actor.ownership.default ?? CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE;
+  if (def >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER && (game.users?.some(isPlayerOrTrustedUser) ?? false)) {
     return true;
   }
 
   return false;
 }
 
-export function isPartyMember(actor: Actor, partyFolderId?: string | null): boolean {
+export function isPartyMember(
+  actor: Actor.Implementation,
+  partyFolderId?: string | null
+): boolean {
   if (!isPlayerCharacter(actor)) return false;
 
   const folderId = partyFolderId ?? getPartyFolder()?.id ?? null;
@@ -70,19 +74,13 @@ export function isPartyMember(actor: Actor, partyFolderId?: string | null): bool
   return hasPlayerOrTrustedOwner(actor);
 }
 
-function iterateActors(): Actor[] {
-  const collection = game.actors;
-  if (collection?.contents) return [...collection.contents];
-  if (typeof collection?.filter === "function") return collection.filter(() => true);
-  return [];
-}
-
-export function getPartyMembers(partyFolderId?: string): Actor[] {
+export function getPartyMembers(partyFolderId?: string): Actor.Implementation[] {
   const folderId = partyFolderId ?? getPartyFolder()?.id;
-  const seen = new Map<string, Actor>();
+  const seen = new Map<string, Actor.Implementation>();
 
-  for (const actor of iterateActors()) {
+  for (const actor of game.actors?.contents ?? []) {
     if (!isPartyMember(actor, folderId)) continue;
+    if (!actor.id) continue;
     seen.set(actor.id, actor);
   }
 

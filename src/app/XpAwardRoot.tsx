@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MODULE_ID } from "../constants.js";
+import { formatMessage, localize } from "../i18n.js";
 import { resolveEnemyPresentation } from "../xp/actor-presentation.js";
 import { applyXpRewards } from "../xp/actor-xp.js";
 import {
@@ -189,7 +190,7 @@ export function XpAwardRoot({
 
     const valid = awardList.filter((r) => r.xp > 0);
     if (valid.length === 0) {
-      ui.notifications?.warn(game.i18n.localize(`${MODULE_ID}.dialog.noRecipients`));
+      ui.notifications?.warn(localize(`${MODULE_ID}.dialog.noRecipients`));
       return;
     }
 
@@ -211,7 +212,7 @@ export function XpAwardRoot({
           perMemberXp: sharedPerMemberXp,
         });
         ui.notifications?.info(
-          game.i18n.format(`${MODULE_ID}.dialog.appliedSummary`, { count })
+          formatMessage(`${MODULE_ID}.dialog.appliedSummary`, { count })
         );
       }
       onClose();
@@ -229,11 +230,11 @@ export function XpAwardRoot({
   return (
     <XpAwardInner className="xp-award-inner">
       <Section>
-        <SectionTitle>{game.i18n.localize(`${MODULE_ID}.dialog.enemies`)}</SectionTitle>
-        <SectionHint>{game.i18n.localize(`${MODULE_ID}.dialog.enemiesHint`)}</SectionHint>
+        <SectionTitle>{localize(`${MODULE_ID}.dialog.enemies`)}</SectionTitle>
+        <SectionHint>{localize(`${MODULE_ID}.dialog.enemiesHint`)}</SectionHint>
         <EnemyDropTarget ref={dropRef} className="xp-enemy-drop-target">
           <DropZone className="xp-enemy-drop-zone">
-            {game.i18n.localize(`${MODULE_ID}.dialog.enemiesHint`)}
+            {localize(`${MODULE_ID}.dialog.enemiesHint`)}
           </DropZone>
           <ActorList className="actor-list xp-enemy-list" $capped={enemyListCapped}>
             {enemies.map((enemy) => {
@@ -270,7 +271,7 @@ export function XpAwardRoot({
       <Section className="xp-award-recipients-section">
         {individualXp ? (
           <>
-            <SectionTitle>{game.i18n.localize(`${MODULE_ID}.dialog.recipients`)}</SectionTitle>
+            <SectionTitle>{localize(`${MODULE_ID}.dialog.recipients`)}</SectionTitle>
             <ActorList className="actor-list xp-award-recipients-list">
               {recipients.map((recipient) => {
                 const presentation = resolvePresentation(recipient, tokenImages);
@@ -289,7 +290,7 @@ export function XpAwardRoot({
         ) : mode === "manual" ? (
           <BonusRow>
             <span>
-              {game.i18n.format(`${MODULE_ID}.dialog.perMemberManual`, {
+              {formatMessage(`${MODULE_ID}.dialog.perMemberManual`, {
                 count: recipients.length,
               })}
             </span>
@@ -302,7 +303,7 @@ export function XpAwardRoot({
           </BonusRow>
         ) : (
           <PerMemberLine>
-            {game.i18n.format(`${MODULE_ID}.dialog.perMember`, {
+            {formatMessage(`${MODULE_ID}.dialog.perMember`, {
               xp: synced.perMemberXp,
               count: recipients.length,
             })}
@@ -311,7 +312,7 @@ export function XpAwardRoot({
       </Section>
 
       <ApplyButton type="button" disabled={!canApply || applying} onClick={() => void handleApply()}>
-        {game.i18n.localize(`${MODULE_ID}.dialog.apply`)}
+        {localize(`${MODULE_ID}.dialog.apply`)}
       </ApplyButton>
     </XpAwardInner>
   );
