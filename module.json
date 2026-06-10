@@ -2,7 +2,7 @@
   "id": "dnd4e-xp-award",
   "title": "D&D 4e XP Award",
   "description": "<p>Award experience to party members after combat or manually. Foundry v13, dnd4e system.</p>",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "authors": [
     {
       "name": "Sigiller",
