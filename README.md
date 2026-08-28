@@ -1,6 +1,6 @@
 # D&D 4e XP Award
 
-Foundry VTT **13** module for **dnd4e**: award experience after combat or manually — enemy XP pool, optional skill challenge, bonus XP, and party distribution with a chat log card (revert supported).
+Foundry VTT **14** module for **dnd4e**: award experience after combat or manually — enemy XP pool, optional skill challenge, bonus XP, and party distribution with a chat log card (revert supported).
 
 Repository: https://github.com/Sigiller/dnd4e-xp-award
 
@@ -15,7 +15,7 @@ https://github.com/Sigiller/dnd4e-xp-award/releases/latest/download/module.json
 ## Setup
 
 1. Enable the module on a **dnd4e** world (GM only for awarding XP).
-2. **Auto mode:** end combat — the XP dialog opens for the GM when **Show XP Dialog on Combat End** is enabled.
+2. **Auto mode:** end combat — the XP dialog opens for the GM when **Show XP Dialog on Combat End** is enabled. Enemies come from the combat; **recipients are the full party** (not only combatants on the tracker).
 3. **Manual mode:** use the **Award XP** scene control (tokens toolbar).
 4. Party recipients come from the **Party** actor folder (same name as [dnd4e-party-sheet](https://github.com/Sigiller/dnd4e-party-sheet) when that module is active, or **Party Folder Name** in settings).
 

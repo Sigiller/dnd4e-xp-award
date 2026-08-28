@@ -47,7 +47,6 @@ export class XpAwardApp extends ApplicationV2 {
     position: {
       width: 520,
     },
-    scrollY: [".actor-list", ".xp-award-recipients-list"],
   };
 
   protected override async _prepareContext(): Promise<object> {

@@ -22,6 +22,10 @@ export interface ActorXpUpdate {
   "system.details.exp": number;
 }
 
+function resolveWorldActor(actorId: string): Actor.Implementation | undefined {
+  return game.actors?.get(actorId);
+}
+
 export function buildXpApplyUpdates(
   recipients: { actorId: string; xp: number }[]
 ): ActorXpUpdate[] {
@@ -29,8 +33,13 @@ export function buildXpApplyUpdates(
 
   for (const entry of recipients) {
     if (entry.xp <= 0) continue;
-    const actor = game.actors?.get(entry.actorId);
-    if (!actor) continue;
+    const actor = resolveWorldActor(entry.actorId);
+    if (!actor?.id) {
+      console.warn(
+        `dnd4e-xp-award | skipping XP apply for missing world actor id=${entry.actorId}`
+      );
+      continue;
+    }
     const current = readActorXp(actor);
     updates.push({
       _id: actor.id,
@@ -48,8 +57,13 @@ export function buildXpRevertUpdates(
 
   for (const entry of recipients) {
     if (entry.xp <= 0) continue;
-    const actor = game.actors?.get(entry.actorId);
-    if (!actor) continue;
+    const actor = resolveWorldActor(entry.actorId);
+    if (!actor?.id) {
+      console.warn(
+        `dnd4e-xp-award | skipping XP revert for missing world actor id=${entry.actorId}`
+      );
+      continue;
+    }
     const current = readActorXp(actor);
     updates.push({
       _id: actor.id,
@@ -62,7 +76,8 @@ export function buildXpRevertUpdates(
 
 export async function commitActorXpUpdates(updates: ActorXpUpdate[]): Promise<number> {
   if (updates.length === 0) return 0;
-  await Actor.updateDocuments(updates, { render: false });
+  const DocumentClass = CONFIG.Actor.documentClass ?? Actor;
+  await DocumentClass.updateDocuments(updates, { render: false });
   return updates.length;
 }
 
@@ -77,5 +92,3 @@ export async function revertXpRewards(
   if (!game.user?.isGM) return 0;
   return commitActorXpUpdates(buildXpRevertUpdates(recipients));
 }
-
-// Keep getDnd4eSystem import used only if needed - actually I imported but didn't use. Remove unused import.

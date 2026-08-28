@@ -4,11 +4,7 @@ import { resolvePolymorphedActor } from "../../xp/actor-xp.js";
 import type { XpEntry } from "../../xp/xp-calculator.js";
 
 function getDragData(event: DragEvent): Record<string, unknown> | null {
-  const TextEditor = foundry.applications.ux.TextEditor;
-  const data =
-    TextEditor.getDragEventData?.(event) ??
-    TextEditor.implementation?.getDragEventData?.(event) ??
-    null;
+  const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
   if (!data || typeof data !== "object" || Array.isArray(data)) return null;
   return data as Record<string, unknown>;
 }
@@ -29,7 +25,8 @@ export function useActorDragDrop(
     const el = zoneRef.current;
     if (!el || !game.user?.isGM) return;
 
-    const dragDrop = new foundry.applications.ux.DragDrop({
+    const DragDrop = foundry.applications.ux.DragDrop.implementation;
+    const dragDrop = new DragDrop({
       dragSelector: null,
       dropSelector: ".xp-enemy-drop-target",
       permissions: {

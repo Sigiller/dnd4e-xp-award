@@ -307,7 +307,7 @@ export async function postXpAwardChatMessage(options: {
   const html = buildXpAwardChatHtml(buildOptions, false);
 
   await ChatMessage.create({
-    user,
+    author: user.id,
     speaker: ChatMessage.getSpeaker(),
     content: html,
     flags: {
@@ -324,7 +324,7 @@ export async function revertXpAwardMessage(message: ChatMessage.Implementation):
   const flag = getXpAwardFlag(message);
   if (!flag || flag.reverted) return false;
 
-  const confirmed = await foundry.applications.api.Dialog.confirm({
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
     window: { title: localize(`${MODULE_ID}.chat.revertConfirmTitle`) },
     content: localize(`${MODULE_ID}.chat.revertConfirmContent`),
     yes: { default: true },

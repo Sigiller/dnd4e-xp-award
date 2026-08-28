@@ -2,7 +2,8 @@ import { getPartyFolderName } from "../settings.js";
 import { isPlayerCharacter } from "../types/dnd4e.js";
 
 function isPlayerOrTrustedUser(user: User.Implementation): boolean {
-  if (!user.active || user.isGM) return false;
+  // Include offline players — XP awards go to the whole party, not only users currently connected.
+  if (user.isGM) return false;
   return user.role === CONST.USER_ROLES.PLAYER || user.role === CONST.USER_ROLES.TRUSTED;
 }
 

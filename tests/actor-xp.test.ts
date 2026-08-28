@@ -30,24 +30,27 @@ describe("actor-xp batch updates", () => {
       actors: { get: (id: string) => actors.get(id) },
       user: { isGM: true },
     };
-    (globalThis as {
-      Actor?: {
-        updateDocuments: (
-          updates: ({ _id: string } & Record<string, unknown>)[],
-          options?: { render?: boolean }
-        ) => Promise<unknown[]>;
-      };
-    }).Actor = {
-      updateDocuments: async (updates, options) => {
-        updateDocumentsCalls.push({ updates, options });
-        return [];
-      },
+    const updateDocuments = async (
+      updates: ({ _id: string } & Record<string, unknown>)[],
+      options?: { render?: boolean }
+    ) => {
+      updateDocumentsCalls.push({ updates, options });
+      return [];
+    };
+    (globalThis as unknown as { Actor: { updateDocuments: typeof updateDocuments } }).Actor = {
+      updateDocuments,
+    };
+    (globalThis as unknown as {
+      CONFIG: { Actor: { documentClass: { updateDocuments: typeof updateDocuments } } };
+    }).CONFIG = {
+      Actor: { documentClass: { updateDocuments } },
     };
   });
 
   afterEach(() => {
     (globalThis as { game?: unknown }).game = originalGame;
     (globalThis as { Actor?: unknown }).Actor = originalActor;
+    delete (globalThis as { CONFIG?: unknown }).CONFIG;
   });
 
   it("buildXpApplyUpdates adds xp per actor", () => {

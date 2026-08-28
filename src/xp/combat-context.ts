@@ -80,7 +80,12 @@ export function buildXpAwardState(options: {
 
   if (mode === "auto" && combat) {
     enemies = buildEnemiesFromCombat(combat);
-    recipients = buildRecipientsFromCombat(combat);
+    // Award the full party (folder / ownership), not only combatants on the tracker.
+    // Falling back to combat party members keeps solo/one-shots working without a Party folder.
+    recipients = buildRecipientsFromParty();
+    if (recipients.length === 0) {
+      recipients = buildRecipientsFromCombat(combat);
+    }
   } else {
     recipients = buildRecipientsFromParty();
   }
