@@ -87,7 +87,7 @@ describe("actor-xp batch updates", () => {
     ]);
   });
 
-  it("commitActorXpUpdates calls Actor.updateDocuments once with render false", async () => {
+  it("commitActorXpUpdates calls Actor.updateDocuments once and lets sheets re-render", async () => {
     const count = await commitActorXpUpdates([
       { _id: "pc1", "system.details.exp": 200 },
     ]);
@@ -97,7 +97,9 @@ describe("actor-xp batch updates", () => {
     assert.deepEqual(updateDocumentsCalls[0]?.updates, [
       { _id: "pc1", "system.details.exp": 200 },
     ]);
-    assert.deepEqual(updateDocumentsCalls[0]?.options, { render: false });
+    // render:false leaves open character sheets stale; the dnd4e sheet then submits the
+    // old XP back on its next change, silently reverting the award.
+    assert.notEqual(updateDocumentsCalls[0]?.options?.render, false);
   });
 
   it("commitActorXpUpdates skips updateDocuments when empty", async () => {

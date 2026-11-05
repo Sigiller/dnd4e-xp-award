@@ -77,7 +77,9 @@ export function buildXpRevertUpdates(
 export async function commitActorXpUpdates(updates: ActorXpUpdate[]): Promise<number> {
   if (updates.length === 0) return 0;
   const DocumentClass = CONFIG.Actor.documentClass ?? Actor;
-  await DocumentClass.updateDocuments(updates, { render: false });
+  // Keep the default render behaviour: with render:false open character sheets stay stale
+  // on every client, and the dnd4e sheet then writes the old XP back on its next submit.
+  await DocumentClass.updateDocuments(updates);
   return updates.length;
 }
 
